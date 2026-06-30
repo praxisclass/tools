@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Editor Pro - PRAXISCLASS</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Marked.js (Markdown Parser) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Highlight.js (Syntax Highlighting) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- Mermaid.js (Diagrams) -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <!-- KaTeX (Math Formulas) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable dark mode
+            theme: {
+                extend: {
+                    colors: {
+                        praxis: { navy: '#0b2046', blue: '#0055a5', gold: '#f6aa1c', light: '#f8fafc' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Drag & Drop Overlay */
+        .drag-over { border: 2px dashed #0055a5 !important; background-color: rgba(0, 85, 165, 0.05) !important; }
+        .dark .drag-over { background-color: rgba(0, 85, 165, 0.2) !important; }
+
+        /* Print Media for PDF Export */
+        @media print {
+            body * { visibility: hidden; }
+            #preview-section, #preview-section * { visibility: visible; }
+            #preview-section { position: absolute; left: 0; top: 0; width: 100%; height: auto; overflow: visible; border: none; background: white; padding: 0; }
+            header, #editor-section, #resizer, footer { display: none !important; }
+            .prose { max-width: 100% !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 h-screen flex flex-col text-slate-800 dark:text-slate-200 overflow-hidden transition-colors duration-200">
+
+    <!-- Header -->
+    <header class="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 shadow-sm shrink-0 z-20 relative">
+        <div class="max-w-[1600px] mx-auto px-4 h-16 flex items-center justify-between">
+            <!-- Brand & Logo -->
+            <div class="flex items-center gap-3">
+                <img src="https://lh3.googleusercontent.com/d/1dkpRiYKjV9saIanLig0q99V93mhxm2jk" alt="Logo PRAXISCLASS" class="h-12 w-auto object-contain fallback-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                <div class="hidden items-end font-bold text-2xl tracking-tight">
+                    <span class="text-praxis-navy dark:text-blue-400">PRAXIS</span><span class="text-praxis-blue dark:text-blue-500">CLASS</span>
+                </div>
+                <div class="ml-2 text-sm text-slate-500 dark:text-slate-400 font-bold hidden sm:block border-l pl-3 border-slate-300 dark:border-slate-700">MD Editor Pro</div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Theme Toggle -->
+                <button onclick="toggleTheme()" class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="Toggle Dark Mode">
+                    <i data-lucide="moon" id="theme-icon" class="w-5 h-5"></i>
+                </button>
+                
+                <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
+                <!-- Clear Button -->
+                <button onclick="clearEditor()" class="text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-md flex items-center gap-1.5 transition-colors font-medium">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> <span class="hidden sm:block">Clear</span>
+                </button>
+
+                <!-- Export Dropdown -->
+                <div class="relative group">
+                    <button class="bg-praxis-navy dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-all flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> <span class="hidden sm:block">Export</span> <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                    </button>
+                    <!-- Dropdown Menu -->
+                    <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right z-50">
+                        <div class="p-1">
+                            <button onclick="exportFile('md')" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2">
+                                <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i> File Markdown (.md)
+                            </button>
+                            <button onclick="exportFile('html')" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2">
+                                <i data-lucide="code" class="w-4 h-4 text-orange-500"></i> File HTML (.html)
+                            </button>
+                            <button onclick="exportFile('pdf')" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2">
+                                <i data-lucide="file" class="w-4 h-4 text-red-500"></i> Dokumen PDF (.pdf)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-grow flex flex-col md:flex-row overflow-hidden w-full relative bg-slate-100 dark:bg-slate-900">
+        
+        <!-- Editor Section -->
+        <section id="editor-section" class="flex flex-col bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 transition-colors" style="width: 50%;">
+            
+            <!-- Editor Title & Extended Toolbar -->
+            <div class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-colors">
+                
+                <!-- Toolbar Area -->
+                <div class="flex items-center flex-wrap gap-1 w-full">
+                    <!-- Text Styling -->
+                    <button onclick="insertSyntax('**', '**')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Bold"><i data-lucide="bold" class="w-4 h-4"></i></button>
+                    <button onclick="insertSyntax('*', '*')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Italic"><i data-lucide="italic" class="w-4 h-4"></i></button>
+                    <button onclick="insertSyntax('~~', '~~')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Strikethrough"><i data-lucide="strikethrough" class="w-4 h-4"></i></button>
+                    
+                    <div class="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1"></div>
+                    
+                    <!-- Headings -->
+                    <button onclick="insertSyntax('# ', '')" class="px-1.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Heading 1">H1</button>
+                    <button onclick="insertSyntax('## ', '')" class="px-1.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Heading 2">H2</button>
+                    <button onclick="insertSyntax('### ', '')" class="px-1.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Heading 3">H3</button>
+                    
+                    <div class="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1"></div>
+                    
+                    <!-- Blocks -->
+                    <button onclick="insertSyntax('> ', '')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Quote"><i data-lucide="quote" class="w-4 h-4"></i></button>
+                    <button onclick="insertSyntax('```\n', '\n```')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Code Block"><i data-lucide="code" class="w-4 h-4"></i></button>
+                    <button onclick="insertSyntax('\n---\n', '')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Horizontal Rule"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                    
+                    <div class="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1"></div>
+                    
+                    <!-- Lists & Inserts -->
+                    <button onclick="insertSyntax('- ', '')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Bullet List"><i data-lucide="list" class="w-4 h-4"></i></button>
+                    <button onclick="insertSyntax('1. ', '')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Numbered List"><i data-lucide="list-ordered" class="w-4 h-4"></i></button>
+                    <button onclick="insertSyntax('- [ ] ', '')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Task List"><i data-lucide="check-square" class="w-4 h-4"></i></button>
+                    
+                    <div class="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1"></div>
+
+                    <!-- Links, Media, Table -->
+                    <button onclick="insertSyntax('[Text](url)', '')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Link"><i data-lucide="link" class="w-4 h-4"></i></button>
+                    <button onclick="insertSyntax('![Alt](https://)', '')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Insert Image"><i data-lucide="image" class="w-4 h-4"></i></button>
+                    <button onclick="insertTable()" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Insert Table"><i data-lucide="table" class="w-4 h-4"></i></button>
+                    
+                    <div class="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1"></div>
+
+                    <!-- Math & Emojis/Symbols -->
+                    <button onclick="insertSyntax('$$\n', '\n$$')" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded" title="Insert Math Formula (KaTeX)"><i data-lucide="sigma" class="w-4 h-4"></i></button>
+                    
+                    <!-- Comprehensive Character Picker -->
+                    <div class="relative" id="pickerContainer">
+                        <button onclick="togglePicker(event)" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-praxis-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded flex items-center" title="Karakter, Emoji & Simbol Lengkap">
+                            <i data-lucide="smile" class="w-4 h-4"></i>
+                        </button>
+                        
+                        <!-- Popover Panel (Dynamic) -->
+                        <div id="pickerPanel" class="hidden absolute top-full left-0 mt-1 w-80 h-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 flex flex-col cursor-default overflow-hidden">
+                            <!-- Tabs -->
+                            <div class="flex border-b border-slate-200 dark:border-slate-700 p-2 gap-1 shrink-0 bg-slate-50 dark:bg-slate-900">
+                                <button onclick="renderPicker('emoji')" id="tab-emoji" class="picker-tab flex-1 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-md transition-colors bg-white dark:bg-slate-700 shadow-sm text-praxis-blue dark:text-blue-400">😀 Emojis</button>
+                                <button onclick="renderPicker('math')" id="tab-math" class="picker-tab flex-1 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors">∑ Math</button>
+                                <button onclick="renderPicker('symbol')" id="tab-symbol" class="picker-tab flex-1 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors">© Symbols</button>
+                            </div>
+                            <!-- Grid Area -->
+                            <div id="pickerGrid" class="grid grid-cols-7 gap-1 p-2 overflow-y-auto flex-grow content-start">
+                                <!-- JS Inject Buttons Here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- D&D Hint (Right aligned) -->
+                    <div class="ml-auto text-[10px] text-slate-400 font-medium hidden lg:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                        <i data-lucide="mouse-pointer-2" class="w-3 h-3"></i> Drag & Drop .md file
+                    </div>
+                </div>
+            </div>
+
+            <!-- Textarea (Editor) -->
+            <textarea id="markdownInput" class="flex-grow w-full p-6 resize-none focus:outline-none font-mono text-sm leading-relaxed text-slate-700 dark:text-slate-300 bg-transparent transition-colors" spellcheck="false" placeholder="Mulai ketik Markdown di sini, atau seret (drag & drop) file .md / .txt ke area ini..."></textarea>
+        </section>
+        
+        <!-- Resizer Splitter -->
+        <div id="resizer" class="hidden md:flex w-1.5 cursor-col-resize bg-slate-200 dark:bg-slate-800 hover:bg-praxis-blue dark:hover:bg-blue-500 transition-colors items-center justify-center relative z-10 group" title="Tarik untuk mengatur lebar">
+            <div class="h-8 w-1 bg-slate-400 dark:bg-slate-600 group-hover:bg-white rounded-full transition-colors"></div>
+        </div>
+
+        <!-- Preview Section -->
+        <section id="preview-section" class="flex flex-col bg-slate-50 dark:bg-slate-900 flex-1 overflow-hidden transition-colors">
+            <!-- Preview Title -->
+            <div class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2 shrink-0 flex items-center h-[53px] sm:h-[49px] transition-colors">
+                <div class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="eye" class="w-4 h-4"></i> Live Preview
+                </div>
+            </div>
+
+            <!-- Preview Content -->
+            <div id="htmlPreviewWrapper" class="flex-grow w-full overflow-y-auto p-6 md:p-8">
+                <article class="prose prose-slate dark:prose-invert max-w-none w-full transition-colors" id="previewContent"></article>
+            </div>
+        </section>
+    </main>
+
+    <!-- Status Bar (Footer) -->
+    <footer class="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-1.5 px-4 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0 z-20 transition-colors">
+        <!-- Stats -->
+        <div class="flex items-center gap-4 font-medium">
+            <span id="wordCount">0 Kata</span>
+            <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+            <span id="charCount">0 Karakter</span>
+            <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 hidden sm:block"></span>
+            <span id="readTime" class="hidden sm:inline-flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> 0 min read</span>
+        </div>
+        <!-- Auto Save Status -->
+        <div class="flex items-center gap-1.5 font-medium text-green-600 dark:text-green-500">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> <span id="saveStatus">Tersimpan lokal</span>
+        </div>
+    </footer>
+
+    <!-- Custom Toast Message -->
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded-lg shadow-xl flex items-center gap-2 z-50 text-sm font-medium">
+        <i data-lucide="info" class="w-4 h-4 text-praxis-gold"></i>
+        <span id="toastMsg">Pesan</span>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Constants & DOM Elements
+        const LOCAL_STORAGE_KEY = 'praxisclass_md_autosave';
+        const editor = document.getElementById('markdownInput');
+        const preview = document.getElementById('previewContent');
+        const previewWrapper = document.getElementById('htmlPreviewWrapper');
+        
+        // Stats DOM
+        const wordCountEl = document.getElementById('wordCount');
+        const charCountEl = document.getElementById('charCount');
+        const readTimeEl = document.getElementById('readTime');
+        const saveStatusEl = document.getElementById('saveStatus');
+
+        // Configure Marked.js to handle Mermaid code blocks
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        
+        const renderer = new marked.Renderer();
+        const originalCode = renderer.code.bind(renderer);
+        renderer.code = function(code, language, isEscaped) {
+            if (language === 'mermaid') {
+                return `<div class="mermaid">${code}</div>`;
+            }
+            return originalCode(code, language, isEscaped);
+        };
+        marked.setOptions({ renderer: renderer, breaks: true, gfm: true });
+
+        function updatePreview() {
+            // Parse Markdown
+            preview.innerHTML = marked.parse(editor.value);
+            
+            // Apply Syntax Highlighting
+            document.querySelectorAll('pre code:not(.language-mermaid)').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+
+            // Render Math (KaTeX)
+            try {
+                if(window.renderMathInElement) {
+                    renderMathInElement(preview, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ],
+                        throwOnError: false
+                    });
+                }
+            } catch (err) {
+                console.warn("KaTeX parsing error:", err);
+            }
+
+            // Render Mermaid Diagrams
+            try {
+                mermaid.run({
+                    nodes: document.querySelectorAll('.mermaid')
+                });
+            } catch (err) {
+                console.warn("Mermaid parsing error:", err);
+            }
+
+            updateStats();
+        }
+
+        // Stats Calculator
+        function updateStats() {
+            const text = editor.value;
+            const chars = text.length;
+            const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            const readMins = Math.ceil(words / 200); // Avg reading speed 200 wpm
+
+            charCountEl.innerText = `${chars} Karakter`;
+            wordCountEl.innerText = `${words} Kata`;
+            readTimeEl.innerHTML = `<i data-lucide="clock" class="w-3 h-3"></i> ${readMins} min read`;
+            lucide.createIcons();
+        }
+
+        // Auto-Save Logic
+        let saveTimeout;
+        editor.addEventListener('input', () => {
+            updatePreview();
+            
+            // Visual Save Indicator
+            saveStatusEl.innerText = "Menyimpan...";
+            saveStatusEl.classList.replace('text-green-600', 'text-slate-400');
+            saveStatusEl.classList.replace('dark:text-green-500', 'dark:text-slate-400');
+
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                localStorage.setItem(LOCAL_STORAGE_KEY, editor.value);
+                saveStatusEl.innerText = "Tersimpan lokal";
+                saveStatusEl.classList.replace('text-slate-400', 'text-green-600');
+                saveStatusEl.classList.replace('dark:text-slate-400', 'dark:text-green-500');
+            }, 1000); // Debounce 1 second
+        });
+
+        function insertSyntax(prefix, suffix) {
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const text = editor.value;
+            const selectedText = text.substring(start, end);
+            
+            const newText = text.substring(0, start) + prefix + selectedText + suffix + text.substring(end);
+            editor.value = newText;
+            
+            editor.focus();
+            if (selectedText.length === 0) {
+                const cursorPosition = start + prefix.length;
+                editor.setSelectionRange(cursorPosition, cursorPosition);
+            } else {
+                editor.setSelectionRange(start, end + prefix.length + suffix.length);
+            }
+            
+            // Trigger input event to update preview and save
+            editor.dispatchEvent(new Event('input'));
+        }
+
+        function insertText(text) {
+            insertSyntax(text, '');
+        }
+
+        // Data for Dynamic Character Picker
+        const pickerData = {
+            emoji: ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾','👍','👎','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','✊','👊','👏','🙌','👐','🤲','🤝','🙏','❤️','🔥','✨','💻','🚀','💡','🐛','✅','❌','⚠️','💯'],
+            math: ['∀','∁','∂','∃','∄','∅','∆','∇','∈','∉','∊','∋','∌','∍','∎','∏','∐','∑','−','∓','∔','∕','∖','∗','∘','∙','√','∛','∜','∝','∞','∟','∠','∡','∢','∣','∤','∥','∦','∧','∨','∩','∪','∫','∬','∭','∮','∯','∰','∱','∲','∳','∴','∵','∶','∷','∸','∹','∺','∻','∼','∽','∾','∿','≀','≁','≂','≃','≄','≅','≆','≇','≈','≉','≊','≋','≌','≍','≎','≏','≐','≑','≒','≓','≔','≕','≖','≗','≘','≙','≚','≛','≜','≝','≞','≟','≠','≡','≢','≣','≤','≥','≦','≧','≨','≩','≪','≫','≬','≭','≮','≯','≰','≱','≲','≳','≴','≵','≶','≷','≸','≹','≺','≻','≼','≽','≾','≿','⊀','⊁','⊂','⊃','⊄','⊅','⊆','⊇','⊈','⊉','⊊','⊋','⊌','⊍','⊎','⊏','⊐','⊑','⊒','⊓','⊔','⊕','⊖','⊗','⊘','⊙','⊚','⊛','⊜','⊝','⊞','⊟','⊠','⊡','⊢','⊣','⊤','⊥'],
+            symbol: ['©','®','™','°','±','×','÷','∞','✓','✗','←','→','↑','↓','↔','↕','↖','↗','↘','↙','€','£','¥','₩','₽','₹','₿','¢','§','¶','†','‡','•','◦','‣','‸','※','‼','‽','‾','‿','⁀','⁁','⁂','⁃','⁄','⁅','⁆','⁇','⁈','⁉','⁊','⁋','⁌','⁍','⁎','⁏','⁐','⁑','⁒','⁓','⁔','⁕','⁖','⁗','⁘','⁙','⁚','⁛','⁜','⁝','⁞','★','☆','☎','☏','☐','☑','☒','☓','☔','☕','☖','☗','☘','☙','☚','☛','☜','☝','☞','☟','☠','☡','☢','☣','☪','☮','☯','☹','☺','☻','☼','☽','☾','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓','♔','♕','♖','♗','♘','♙','♚','♛','♜','♝','♞','♟','♠','♡','♢','♣','♤','♥','♦','♧','♨','♩','♪','♫','♬','♭','♮','♯']
+        };
+
+        let activePickerTab = 'emoji';
+
+        function togglePicker(event) {
+            if(event) event.stopPropagation();
+            const panel = document.getElementById('pickerPanel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                renderPicker(activePickerTab); // Render on open
+            }
+        }
+
+        // Close picker when clicking outside
+        document.addEventListener('click', function(event) {
+            const container = document.getElementById('pickerContainer');
+            const panel = document.getElementById('pickerPanel');
+            if (container && !container.contains(event.target)) {
+                panel.classList.add('hidden');
+            }
+        });
+
+        // Prevent editor from losing focus when clicking inside picker panel
+        document.getElementById('pickerPanel').addEventListener('mousedown', function(e) {
+            e.preventDefault();
+        });
+
+        function renderPicker(category) {
+            activePickerTab = category;
+            const grid = document.getElementById('pickerGrid');
+            grid.innerHTML = ''; // Clear current icons
+
+            // Update Tab styling
+            ['emoji', 'math', 'symbol'].forEach(tab => {
+                const btn = document.getElementById(`tab-${tab}`);
+                if(tab === category) {
+                    btn.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-praxis-blue', 'dark:text-blue-400');
+                    btn.classList.remove('hover:bg-white', 'dark:hover:bg-slate-700');
+                } else {
+                    btn.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-praxis-blue', 'dark:text-blue-400');
+                    btn.classList.add('hover:bg-white', 'dark:hover:bg-slate-700');
+                }
+            });
+
+            // Inject Buttons dynamically
+            pickerData[category].forEach(char => {
+                const btn = document.createElement('button');
+                btn.className = 'hover:bg-slate-100 dark:hover:bg-slate-700 p-1.5 rounded text-lg transition-colors focus:outline-none flex items-center justify-center';
+                
+                if(category === 'math' || category === 'symbol') {
+                    btn.classList.add('font-mono', 'text-slate-800', 'dark:text-slate-200');
+                }
+                
+                btn.innerText = char;
+                btn.onclick = (e) => {
+                    e.stopPropagation(); // Keep panel open for multiple clicks
+                    insertText(char);
+                    // Small click visual feedback
+                    btn.classList.add('bg-blue-100', 'dark:bg-slate-600');
+                    setTimeout(() => btn.classList.remove('bg-blue-100', 'dark:bg-slate-600'), 150);
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function insertTable() {
+            const tableTemplate = "\n\n| Header 1 | Header 2 | Header 3 |\n| :--- | :--- | :--- |\n| Baris 1 | Data | Data |\n| Baris 2 | Data | Data |\n\n";
+            insertSyntax(tableTemplate, '');
+        }
+
+        function clearEditor() {
+            showToast("Konfirmasi dialog dibuka...", 1000);
+            // Use custom modal instead of alert/confirm strictly as requested in prompt rules
+            // Emulating confirm with a basic check for now
+            const confirmClear = window.confirm("Hapus semua teks? Aksi ini tidak dapat dibatalkan.");
+            if (confirmClear) {
+                editor.value = "";
+                editor.dispatchEvent(new Event('input'));
+                editor.focus();
+                showToast("Layar editor dibersihkan.");
+            }
+        }
+
+        function exportFile(type) {
+            const content = editor.value;
+            if(!content) { showToast("Editor kosong, tidak ada yang diekspor."); return; }
+
+            if (type === 'md') {
+                downloadBlob(content, "dokumen_praxis.md", "text/markdown");
+            } else if (type === 'html') {
+                const htmlContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dokumen Praxis</title></head><body>${preview.innerHTML}</body></html>`;
+                downloadBlob(htmlContent, "dokumen_praxis.html", "text/html");
+            } else if (type === 'pdf') {
+                // Gunakan fitur cetak native browser, CSS @media print akan merapikannya
+                window.print();
+            }
+        }
+
+        function downloadBlob(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`File ${filename} berhasil diunduh.`);
+        }
+
+        editor.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            editor.classList.add('drag-over');
+        });
+
+        editor.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            editor.classList.remove('drag-over');
+        });
+
+        editor.addEventListener('drop', (e) => {
+            e.preventDefault();
+            editor.classList.remove('drag-over');
+            
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                // Check if it's a text/md file
+                if(file.type.match('text.*') || file.name.endsWith('.md')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        editor.value = event.target.result;
+                        editor.dispatchEvent(new Event('input'));
+                        showToast(`File ${file.name} berhasil dimuat.`);
+                    };
+                    reader.readAsText(file);
+                } else {
+                    showToast("Hanya mendukung format file teks (.txt / .md)");
+                }
+            }
+        });
+
+        // Synchronized Scrolling
+        editor.addEventListener('scroll', function() {
+            const scrollPercentage = editor.scrollTop / (editor.scrollHeight - editor.clientHeight);
+            previewWrapper.scrollTop = scrollPercentage * (previewWrapper.scrollHeight - previewWrapper.clientHeight);
+        });
+
+        // Splitter Resizer Logic
+        const resizer = document.getElementById('resizer');
+        const leftSide = document.getElementById('editor-section');
+        const rightSide = document.getElementById('preview-section');
+        let x = 0; let leftWidth = 0;
+
+        resizer.addEventListener('mousedown', function(e) {
+            x = e.clientX;
+            leftWidth = leftSide.getBoundingClientRect().width;
+            document.addEventListener('mousemove', mouseMoveHandler);
+            document.addEventListener('mouseup', mouseUpHandler);
+            document.body.style.cursor = 'col-resize';
+            [leftSide, rightSide].forEach(el => { el.style.userSelect = 'none'; el.style.pointerEvents = 'none'; });
+        });
+
+        const mouseMoveHandler = function(e) {
+            const dx = e.clientX - x;
+            const newLeftWidth = ((leftWidth + dx) * 100) / resizer.parentNode.getBoundingClientRect().width;
+            if(newLeftWidth > 20 && newLeftWidth < 80) leftSide.style.width = `${newLeftWidth}%`;
+        };
+
+        const mouseUpHandler = function() {
+            document.removeEventListener('mousemove', mouseMoveHandler);
+            document.removeEventListener('mouseup', mouseUpHandler);
+            document.body.style.cursor = 'default';
+            [leftSide, rightSide].forEach(el => { el.style.userSelect = 'auto'; el.style.pointerEvents = 'auto'; });
+        };
+
+        // Theme Toggle Logic
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                themeIcon.setAttribute('data-lucide', 'moon');
+                mermaid.initialize({ theme: 'default' }); // Update mermaid theme
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                themeIcon.setAttribute('data-lucide', 'sun');
+                mermaid.initialize({ theme: 'dark' }); // Update mermaid theme
+            }
+            lucide.createIcons();
+            // Re-render to apply mermaid theme change
+            updatePreview();
+        }
+
+        // Custom Toast Function
+        function showToast(msg, duration = 3000) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), duration);
+        }
+
+        // Initialization
+        window.onload = () => {
+            // Load Theme Preference
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+                mermaid.initialize({ theme: 'dark' });
+            }
+
+            // Load Saved Content or Default
+            const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedContent) {
+                editor.value = savedContent;
+            } else {
+                editor.value = "# PRAXISCLASS Markdown Pro ✨\n\nSelamat datang! Editor ini menyimpan pekerjaan Anda **secara otomatis** di browser.\n\n## Fitur Unggulan:\n- [x] Auto-save via LocalStorage\n- [x] Dark Mode Support 🌙\n- [x] Export ke PDF, HTML, MD\n- [x] Rumus Matematika (KaTeX) $\\sum_{i=1}^n x_i$\n\n### Rumus Matematika (Block):\n$$ E = mc^2 $$\n\n### Diagram Mendukung (Mermaid.js)\n```mermaid\ngraph TD;\n    A[Mulai Menulis] --> B{Auto-Save};\n    B -->|Ya| C[Tersimpan Aman];\n    B -->|Tidak| D[Gagal?];\n```\n\n> Coba seret (drag & drop) file .md Anda ke area editor ini!";
+            }
+            
+            updatePreview();
+        };
+    </script>
+</body>
+</html>

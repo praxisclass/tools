@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsite Builder - Single Page</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel CDN (Untuk menjalankan JSX di browser) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- DAFTAR IKON (FontAwesome Classes) ---
+        const faIcons = {
+          Link: "fas fa-link",
+          WhatsApp: "fab fa-whatsapp",
+          Instagram: "fab fa-instagram",
+          Facebook: "fab fa-facebook",
+          Twitter: "fab fa-twitter",
+          Youtube: "fab fa-youtube",
+          LinkedIn: "fab fa-linkedin",
+          Website: "fas fa-globe",
+          Email: "fas fa-envelope",
+          Telepon: "fas fa-phone",
+          Lokasi: "fas fa-map-marker-alt",
+          Toko: "fas fa-store",
+          Portofolio: "fas fa-book-open",
+          Github: "fab fa-github"
+        };
+
+        // --- DEFINISI TEMA (CSS Classes) ---
+        const themeStyles = {
+          futuristic: {
+            name: 'Futuristik (Cyber)',
+            bg: 'bg-slate-950 text-white relative overflow-hidden',
+            container: 'relative z-10 p-6 flex flex-col items-center',
+            card: 'bg-slate-900/60 backdrop-blur-md border border-cyan-500/30 shadow-[0_0_20px_rgba(0,243,255,0.15)] rounded-3xl w-full p-6 text-center',
+            logoRing: 'border-2 border-cyan-400 p-1 shadow-[0_0_15px_rgba(0,243,255,0.5)]',
+            title: 'font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 drop-shadow-[0_0_8px_rgba(0,243,255,0.8)] tracking-wider mt-4',
+            subtitle: 'text-gray-300 font-bold tracking-widest mt-1',
+            subSubtitle: 'text-cyan-400 text-sm tracking-widest mt-2 border border-cyan-500/50 bg-cyan-500/10 px-4 py-1 rounded-full inline-block',
+            desc: 'text-sm text-gray-400 mt-4',
+            button: 'flex items-center w-full px-4 py-3 mt-3 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/30 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(0,243,255,0.4)] text-white rounded-xl transition-all group',
+            buttonIcon: 'w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center mr-3 text-cyan-400 group-hover:text-cyan-200 transition-colors',
+            footer: 'text-xs text-cyan-500/70 tracking-widest mt-8 uppercase'
+          },
+          corporate: {
+            name: 'Profesional (Korporat)',
+            bg: 'bg-slate-100 text-slate-800',
+            container: 'p-6 flex flex-col items-center',
+            card: 'bg-white shadow-xl shadow-slate-200/50 border border-slate-200 rounded-2xl w-full p-8 text-center',
+            logoRing: 'border-4 border-white shadow-md',
+            title: 'font-bold text-2xl text-slate-900 mt-4',
+            subtitle: 'text-slate-600 font-medium mt-1',
+            subSubtitle: 'text-blue-600 text-sm font-semibold mt-2 inline-block',
+            desc: 'text-sm text-slate-500 mt-4 leading-relaxed',
+            button: 'flex items-center justify-center w-full px-4 py-3 mt-3 bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg text-white rounded-lg transition-all',
+            buttonIcon: 'mr-3 opacity-90',
+            footer: 'text-xs text-slate-400 mt-8 font-medium'
+          },
+          minimalist: {
+            name: 'Minimalis (Clean)',
+            bg: 'bg-white text-gray-900',
+            container: 'p-6 flex flex-col items-center',
+            card: 'w-full py-8 text-center',
+            logoRing: 'rounded-full',
+            title: 'font-light text-3xl tracking-wide mt-4',
+            subtitle: 'text-gray-400 tracking-widest uppercase text-xs mt-2',
+            subSubtitle: 'text-gray-500 text-sm mt-1 italic',
+            desc: 'text-sm text-gray-600 mt-6',
+            button: 'flex items-center justify-center w-full px-4 py-3 mt-3 bg-transparent border border-gray-300 hover:border-gray-900 text-gray-800 hover:bg-gray-50 rounded-full transition-all',
+            buttonIcon: 'mr-3',
+            footer: 'text-xs text-gray-400 mt-10'
+          },
+          playful: {
+            name: 'Ceria (Neo-Brutalist)',
+            bg: 'bg-[#FFE8A1] text-black',
+            container: 'p-6 flex flex-col items-center',
+            card: 'bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-3xl w-full p-6 text-center',
+            logoRing: 'border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]',
+            title: 'font-black text-2xl uppercase mt-4',
+            subtitle: 'font-bold text-gray-800 mt-1',
+            subSubtitle: 'font-bold bg-[#FF90E8] border-2 border-black px-3 py-1 rounded-full text-sm mt-3 inline-block shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]',
+            desc: 'text-sm font-medium mt-4',
+            button: 'flex items-center justify-center w-full px-4 py-3 mt-4 bg-[#A6FAFF] hover:bg-[#FFC900] border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:translate-x-1 font-bold rounded-full transition-all',
+            buttonIcon: 'mr-3',
+            footer: 'text-xs font-bold mt-8 border-t-4 border-black pt-4'
+          },
+          nature: {
+            name: 'Alam (Organik)',
+            bg: 'bg-[#F0F2EB] text-[#3D4A3E]',
+            container: 'p-6 flex flex-col items-center',
+            card: 'bg-[#FCFDFB] border border-[#E2E5D9] shadow-sm rounded-3xl w-full p-8 text-center',
+            logoRing: 'border-4 border-[#7A8B7B]',
+            title: 'font-serif text-3xl text-[#2C3B2D] mt-4',
+            subtitle: 'text-[#5C6B5D] mt-1',
+            subSubtitle: 'text-[#7A8B7B] text-sm mt-2 italic',
+            desc: 'text-sm text-[#6C7A6D] mt-4 leading-relaxed',
+            button: 'flex items-center justify-center w-full px-4 py-3 mt-3 bg-[#7A8B7B] hover:bg-[#5C6B5D] text-white rounded-2xl transition-colors',
+            buttonIcon: 'mr-3 opacity-80',
+            footer: 'text-xs text-[#8C9A8D] mt-8 font-serif'
+          },
+          retro: {
+            name: 'Retro 90s',
+            bg: 'bg-[#E0E2DB] text-[#2D2D2A]',
+            container: 'p-6 flex flex-col items-center',
+            card: 'bg-[#C0C0C0] border-t-2 border-l-2 border-white border-b-4 border-r-4 border-gray-600 w-full p-6 text-center font-mono',
+            logoRing: 'border-2 border-white rounded-none',
+            title: 'font-bold text-xl text-[#000080] mt-4 uppercase tracking-tighter',
+            subtitle: 'text-black mt-1 bg-white inline-block px-2 border border-gray-400',
+            subSubtitle: 'text-[#800000] text-sm mt-3 block',
+            desc: 'text-xs text-black mt-4 p-2 bg-white border inset-border',
+            button: 'flex items-center w-full px-4 py-2 mt-3 bg-[#C0C0C0] hover:bg-[#000080] hover:text-white border-t-2 border-l-2 border-white border-b-4 border-r-4 border-gray-600 text-black font-bold transition-none',
+            buttonIcon: 'mr-3',
+            footer: 'text-xs text-gray-600 mt-8 font-mono'
+          },
+          terminal: {
+            name: 'Hacker (Terminal)',
+            bg: 'bg-black text-[#00FF41]',
+            container: 'p-6 flex flex-col items-center font-mono',
+            card: 'border border-[#00FF41] w-full p-6 text-left shadow-[0_0_10px_rgba(0,255,65,0.2)]',
+            logoRing: 'border border-[#00FF41] rounded-none opacity-80',
+            title: 'font-bold text-xl mt-4',
+            subtitle: 'text-[#008F11] mt-1 text-sm',
+            subSubtitle: 'text-[#00FF41] text-xs mt-3 opacity-70',
+            desc: 'text-xs text-[#008F11] mt-4',
+            button: 'flex items-center w-full px-4 py-2 mt-3 bg-black hover:bg-[#00FF41] hover:text-black border border-[#00FF41] transition-colors',
+            buttonIcon: 'mr-3',
+            footer: 'text-[10px] text-[#008F11] mt-8 text-center'
+          },
+          luxury: {
+            name: 'Elegan (Mewah)',
+            bg: 'bg-slate-950 text-amber-50',
+            container: 'p-6 flex flex-col items-center',
+            card: 'bg-slate-900 border border-amber-900/50 shadow-2xl rounded-sm w-full p-8 text-center',
+            logoRing: 'border-2 border-amber-500/50 p-1 rounded-full',
+            title: 'font-serif text-3xl text-amber-400 tracking-widest mt-4',
+            subtitle: 'text-amber-200/70 font-light mt-1',
+            subSubtitle: 'text-amber-500 text-sm mt-3 italic',
+            desc: 'text-sm text-slate-400 mt-4 leading-relaxed font-serif',
+            button: 'flex items-center justify-center w-full px-4 py-3 mt-4 bg-transparent border border-amber-700/50 hover:bg-amber-900/30 text-amber-300 rounded-sm transition-all',
+            buttonIcon: 'mr-3',
+            footer: 'text-xs text-amber-700 mt-8 tracking-widest uppercase'
+          },
+          gradient: {
+            name: 'Modern Gradasi',
+            bg: 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white',
+            container: 'p-6 flex flex-col items-center min-h-screen',
+            card: 'bg-white/20 backdrop-blur-xl border border-white/30 shadow-2xl rounded-3xl w-full p-8 text-center',
+            logoRing: 'border-2 border-white/50 p-1',
+            title: 'font-extrabold text-2xl mt-4',
+            subtitle: 'text-white/90 font-medium mt-1',
+            subSubtitle: 'bg-white/20 px-3 py-1 rounded-full text-sm mt-3 inline-block font-medium',
+            desc: 'text-sm text-white/80 mt-4',
+            button: 'flex items-center justify-center w-full px-4 py-3 mt-3 bg-white/10 hover:bg-white/20 border border-white/30 text-white rounded-2xl transition-all',
+            buttonIcon: 'mr-3',
+            footer: 'text-xs text-white/60 mt-8'
+          }
+        };
+
+        function App() {
+          // --- STATE KOSONG ---
+          const [config, setConfig] = useState({
+            logo: '',
+            title: '',
+            subtitle: '',
+            subSubtitle: '',
+            subSubtitleLink: '',
+            description: '',
+            footerText: '',
+            footerLink: '',
+            theme: 'futuristic',
+            links: []
+          });
+
+          const [previewMode, setPreviewMode] = useState('mobile');
+
+          // --- HANDLER FUNCTIONS ---
+          const handleInputChange = (e) => {
+            const { name, value } = e.target;
+            setConfig({ ...config, [name]: value });
+          };
+
+          const handleAddLink = () => {
+            setConfig({
+              ...config,
+              links: [...config.links, { id: Date.now(), label: '', url: '', iconType: 'preset', icon: 'Link', iconUrl: '' }]
+            });
+          };
+
+          const handleUpdateLink = (id, field, value) => {
+            const updatedLinks = config.links.map(link => 
+              link.id === id ? { ...link, [field]: value } : link
+            );
+            setConfig({ ...config, links: updatedLinks });
+          };
+
+          const handleDeleteLink = (id) => {
+            setConfig({ ...config, links: config.links.filter(link => link.id !== id) });
+          };
+
+          // --- LOGIC EXPORT TO HTML ---
+          const handleExportHTML = () => {
+            const theme = themeStyles[config.theme];
+            
+            // Catatan: kita menggunakan <\/script> di dalam string untuk mencegah penutupan tag script utama
+            const htmlContent = `<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${config.title || 'Microsite'}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for specific themes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body { margin: 0; min-height: 100vh; }
+      .bg-pattern { background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px); background-size: 30px 30px; }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 sm:p-8 ${theme.bg}">
+    ${config.theme === 'futuristic' ? `<div class="absolute inset-0 pointer-events-none bg-pattern z-0"></div>` : ''}
+    
+    <div class="w-full max-w-md ${theme.container}">
+        <div class="${theme.card}">
+            
+            ${config.logo ? `
+            <div class="flex justify-center mb-4">
+                <div class="w-28 h-28 ${config.theme === 'futuristic' ? 'relative' : ''}">
+                    <img src="${config.logo}" alt="Profile" class="w-full h-full object-cover rounded-full ${theme.logoRing}" onerror="this.src='https://via.placeholder.com/150?text=LOGO'">
+                </div>
+            </div>` : ''}
+
+            ${config.title ? `<h1 class="${theme.title}">${config.title}</h1>` : ''}
+            
+            ${config.subtitle ? `<h2 class="${theme.subtitle}">${config.subtitle}</h2>` : ''}
+
+            ${config.subSubtitle ? `
+                ${config.subSubtitleLink ? `<a href="${config.subSubtitleLink}" target="_blank" rel="noreferrer" class="${theme.subSubtitle} hover:opacity-80 transition-opacity">${config.subSubtitle}</a>` : `<div class="${theme.subSubtitle}">${config.subSubtitle}</div>`}
+            ` : ''}
+
+            ${config.description ? `<p class="${theme.desc}">${config.description}</p>` : ''}
+
+            <div class="mt-8 space-y-4">
+                ${config.links.map(link => `
+                <a href="${link.url || '#'}" target="_blank" rel="noreferrer" class="${theme.button}">
+                    <div class="${theme.buttonIcon}">
+                        ${link.iconType === 'custom' && link.iconUrl 
+                            ? `<img src="${link.iconUrl}" alt="icon" class="w-full h-full object-cover rounded-full p-1" onerror="this.style.display='none'">` 
+                            : `<i class="${faIcons[link.icon] || 'fas fa-link'} text-xl"></i>`
+                        }
+                    </div>
+                    <span class="font-semibold text-[15px]">${link.label || 'Tautan'}</span>
+                    ${config.theme === 'futuristic' ? `<div class="ml-auto text-cyan-500/50 group-hover:text-cyan-400">❯</div>` : ''}
+                </a>`).join('')}
+            </div>
+
+            ${config.footerText ? `
+                <div class="${theme.footer}">
+                    ${config.footerLink ? `<a href="${config.footerLink}" target="_blank" rel="noreferrer" class="hover:underline">${config.footerText}</a>` : `<span>${config.footerText}</span>`}
+                </div>
+            ` : ''}
+            
+        </div>
+    </div>
+</body>
+</html>`;
+
+            // Trigger File Download
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'microsite.html';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          };
+
+          const currentTheme = themeStyles[config.theme];
+
+          return (
+            <div className="flex flex-col md:flex-row h-screen bg-gray-50 overflow-hidden font-sans">
+              
+              {/* PANEL KIRI: EDITOR */}
+              <div className="w-full md:w-[450px] lg:w-[500px] h-full bg-white border-r border-gray-200 flex flex-col shadow-xl z-20">
+                <div className="bg-slate-900 text-white p-5 flex items-center justify-between shrink-0">
+                  <div>
+                    <h1 className="text-xl font-bold flex items-center">
+                      <i className="fas fa-columns mr-2 text-cyan-400"></i> Microsite Builder
+                    </h1>
+                    <p className="text-xs text-gray-400 mt-1">Buat halaman link-in-bio kustom Anda</p>
+                  </div>
+                  
+                  {/* TOMBOL EXPORT HTML */}
+                  <button 
+                    onClick={handleExportHTML}
+                    className="flex items-center text-sm bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white px-4 py-2 rounded-lg font-bold shadow-md transition-all active:scale-95"
+                    title="Download file HTML murni"
+                  >
+                    <i className="fas fa-download mr-2"></i> Export HTML
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                  {/* Tema */}
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <label className="flex items-center text-sm font-bold text-blue-900 mb-3">
+                      <i className="fas fa-palette mr-2"></i> Tema Tampilan
+                    </label>
+                    <select 
+                      name="theme" 
+                      value={config.theme} 
+                      onChange={handleInputChange}
+                      className="w-full p-2.5 bg-white border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                    >
+                      {Object.entries(themeStyles).map(([key, style]) => (
+                        <option key={key} value={key}>{style.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Profil */}
+                  <div>
+                    <h2 className="flex items-center text-sm font-bold text-gray-800 mb-4 pb-2 border-b">
+                      <i className="fas fa-font mr-2"></i> Identitas Profil
+                    </h2>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">URL Logo/Foto</label>
+                        <div className="flex relative">
+                          <div className="absolute left-3 top-2.5 text-gray-400"><i className="fas fa-image"></i></div>
+                          <input type="text" name="logo" value={config.logo} onChange={handleInputChange} placeholder="https://..." className="w-full pl-9 p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Judul Utama</label>
+                        <input type="text" name="title" value={config.title} onChange={handleInputChange} placeholder="Misal: PRAXIS PROJECT" className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Sub-judul</label>
+                          <input type="text" name="subtitle" value={config.subtitle} onChange={handleInputChange} placeholder="Misal: Building Competence" className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Kreator / Badge</label>
+                          <input type="text" name="subSubtitle" value={config.subSubtitle} onChange={handleInputChange} placeholder="Misal: By: Nama Anda" className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Link Kreator (Opsional)</label>
+                        <input type="text" name="subSubtitleLink" value={config.subSubtitleLink} onChange={handleInputChange} placeholder="https://..." className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Deskripsi Tambahan</label>
+                        <textarea name="description" value={config.description} onChange={handleInputChange} placeholder="Deskripsi singkat tentang profil atau kegiatan..." rows="3" className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Links */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b">
+                      <h2 className="flex items-center text-sm font-bold text-gray-800">
+                        <i className="fas fa-link mr-2"></i> Tombol Tautan
+                      </h2>
+                      <button onClick={handleAddLink} className="flex items-center text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-md hover:bg-blue-200 transition-colors font-semibold">
+                        <i className="fas fa-plus mr-1"></i> Tambah
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {config.links.map((link, index) => (
+                        <div key={link.id} className="p-3 border rounded-xl bg-gray-50 hover:bg-white hover:border-blue-300 transition-colors group relative">
+                          <div className="absolute -left-2 -top-2 bg-slate-800 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold shadow-sm">
+                            {index + 1}
+                          </div>
+                          <div className="flex gap-2 items-start">
+                            
+                            <div className="flex-1 space-y-2">
+                              <input 
+                                type="text" 
+                                value={link.label} 
+                                onChange={(e) => handleUpdateLink(link.id, 'label', e.target.value)} 
+                                placeholder="Label Tombol" 
+                                className="w-full p-1.5 text-sm border-b bg-transparent focus:border-blue-500 outline-none font-bold text-gray-800" 
+                              />
+                              <input 
+                                type="text" 
+                                value={link.url} 
+                                onChange={(e) => handleUpdateLink(link.id, 'url', e.target.value)} 
+                                placeholder="https://..." 
+                                className="w-full p-1.5 text-xs text-gray-500 border-b bg-transparent focus:border-blue-500 outline-none" 
+                              />
+                              
+                              {/* Icon Selection Toggle */}
+                              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+                                <select 
+                                  value={link.iconType || 'preset'} 
+                                  onChange={(e) => handleUpdateLink(link.id, 'iconType', e.target.value)}
+                                  className="p-1.5 text-xs border rounded-md bg-white cursor-pointer text-gray-600 focus:border-blue-500 outline-none"
+                                >
+                                  <option value="preset">Icon Standar</option>
+                                  <option value="custom">URL Gambar</option>
+                                </select>
+
+                                {(link.iconType === 'preset' || !link.iconType) ? (
+                                  <select 
+                                    value={link.icon} 
+                                    onChange={(e) => handleUpdateLink(link.id, 'icon', e.target.value)}
+                                    className="flex-1 p-1.5 text-xs border rounded-md bg-white cursor-pointer text-gray-600 focus:border-blue-500 outline-none"
+                                    title="Pilih Ikon"
+                                  >
+                                    {Object.keys(faIcons).map(i => <option key={i} value={i}>{i}</option>)}
+                                  </select>
+                                ) : (
+                                  <div className="flex-1 flex relative">
+                                    <div className="absolute left-2 top-1.5 text-gray-400"><i className="fas fa-image text-xs"></i></div>
+                                    <input 
+                                      type="text" 
+                                      value={link.iconUrl || ''} 
+                                      onChange={(e) => handleUpdateLink(link.id, 'iconUrl', e.target.value)} 
+                                      placeholder="https://.../gambar.png" 
+                                      className="w-full pl-6 p-1.5 text-xs text-gray-500 border rounded-md bg-white focus:border-blue-500 outline-none" 
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <button 
+                              onClick={() => handleDeleteLink(link.id)} 
+                              className="text-gray-400 hover:text-red-500 p-2 shrink-0"
+                              title="Hapus Link"
+                            >
+                              <i className="fas fa-trash-alt"></i>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {config.links.length === 0 && (
+                        <div className="text-center py-6 text-sm text-gray-400 border-2 border-dashed rounded-xl">
+                          Belum ada tautan. Tambahkan sekarang!
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div>
+                    <h2 className="flex items-center text-sm font-bold text-gray-800 mb-4 pb-2 border-b">
+                      <i className="fas fa-align-left mr-2"></i> Footer
+                    </h2>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Teks Footer</label>
+                        <input type="text" name="footerText" value={config.footerText} onChange={handleInputChange} placeholder="Misal: Hak Cipta 2026" className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">URL Footer (Opsional)</label>
+                        <input type="text" name="footerLink" value={config.footerLink} onChange={handleInputChange} placeholder="https://..." className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pb-10"></div>
+                </div>
+              </div>
+
+
+              {/* PANEL KANAN: PREVIEW */}
+              <div className="flex-1 bg-slate-200/50 flex flex-col relative">
+                <div className="absolute top-4 right-4 z-30 flex bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+                  <button 
+                    onClick={() => setPreviewMode('mobile')} 
+                    className={`p-2 rounded-md flex items-center transition-colors ${previewMode === 'mobile' ? 'bg-slate-800 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                    title="Tampilan HP"
+                  >
+                    <i className="fas fa-mobile-alt text-lg px-1"></i>
+                  </button>
+                  <button 
+                    onClick={() => setPreviewMode('desktop')} 
+                    className={`p-2 rounded-md flex items-center transition-colors ${previewMode === 'desktop' ? 'bg-slate-800 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                    title="Tampilan Desktop"
+                  >
+                    <i className="fas fa-desktop text-sm px-1"></i>
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto flex items-center justify-center p-4 sm:p-8">
+                  <div className={`transition-all duration-500 ease-in-out relative overflow-hidden bg-white
+                    ${previewMode === 'mobile' ? 'w-[375px] h-[750px] rounded-[40px] shadow-[0_0_0_12px_#1e293b,0_20px_40px_rgba(0,0,0,0.3)] ring-1 ring-gray-900/5' : 'w-full max-w-4xl h-[85vh] rounded-xl shadow-2xl border border-gray-300'}`}
+                  >
+                    
+                    {/* Render Microsite */}
+                    <div className={`w-full h-full overflow-y-auto ${currentTheme.bg}`}>
+                      
+                      {config.theme === 'futuristic' && (
+                        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+                      )}
+
+                      <div className={`${currentTheme.container} min-h-full justify-center`}>
+                        
+                        {/* Tampilan Kosong Default */}
+                        {!config.logo && !config.title && !config.subtitle && config.links.length === 0 && (
+                          <div className="text-center opacity-50 p-6 flex flex-col items-center">
+                            <i className="fas fa-columns text-4xl mb-4 opacity-50"></i>
+                            <p>Mulai isi form di panel sebelah kiri untuk melihat hasil di sini.</p>
+                          </div>
+                        )}
+
+                        {/* Tampilkan Card jika ada isian */}
+                        {(config.logo || config.title || config.subtitle || config.description || config.links.length > 0) && (
+                          <div className={currentTheme.card}>
+                            
+                            {config.logo && (
+                              <div className="flex justify-center mb-4">
+                                <div className={`w-28 h-28 ${config.theme === 'futuristic' ? 'relative' : ''}`}>
+                                  <img 
+                                    src={config.logo} 
+                                    alt="Profile" 
+                                    className={`w-full h-full object-cover rounded-full ${currentTheme.logoRing}`}
+                                    onError={(e) => { e.target.src = 'https://via.placeholder.com/150?text=LOGO' }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {config.title && <h1 className={currentTheme.title}>{config.title}</h1>}
+                            
+                            {config.subtitle && (
+                              <h2 className={currentTheme.subtitle}>{config.subtitle}</h2>
+                            )}
+
+                            {config.subSubtitle && (
+                              config.subSubtitleLink ? (
+                                <a href={config.subSubtitleLink} target="_blank" rel="noreferrer" className={`${currentTheme.subSubtitle} hover:opacity-80 transition-opacity`}>
+                                  {config.subSubtitle}
+                                </a>
+                              ) : (
+                                <div className={currentTheme.subSubtitle}>{config.subSubtitle}</div>
+                              )
+                            )}
+
+                            {config.description && (
+                              <p className={currentTheme.desc}>{config.description}</p>
+                            )}
+
+                            <div className="mt-8 space-y-4">
+                              {config.links.map(link => (
+                                <a 
+                                  key={link.id} 
+                                  href={link.url || '#'} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className={currentTheme.button}
+                                >
+                                  <div className={currentTheme.buttonIcon}>
+                                     {link.iconType === 'custom' && link.iconUrl ? (
+                                       <img src={link.iconUrl} alt="icon" className="w-full h-full object-cover rounded-full p-0.5 bg-white/10" onError={(e) => { e.target.style.display = 'none'; }} />
+                                     ) : (
+                                       <i className={`${faIcons[link.icon] || 'fas fa-link'} text-xl`}></i>
+                                     )}
+                                  </div>
+                                  <span className="font-semibold text-[15px]">{link.label || 'Tautan'}</span>
+                                  
+                                  {config.theme === 'futuristic' && (
+                                    <div className="ml-auto text-cyan-500/50 group-hover:text-cyan-400">❯</div>
+                                  )}
+                                </a>
+                              ))}
+                            </div>
+
+                            {config.footerText && (
+                              <div className={currentTheme.footer}>
+                                {config.footerLink ? (
+                                  <a href={config.footerLink} target="_blank" rel="noreferrer" className="hover:underline">
+                                    {config.footerText}
+                                  </a>
+                                ) : (
+                                  <span>{config.footerText}</span>
+                                )}
+                              </div>
+                            )}
+
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {previewMode === 'mobile' && (
+                      <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-50 pointer-events-none">
+                        <div className="w-32 h-6 bg-slate-900 rounded-b-3xl"></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
